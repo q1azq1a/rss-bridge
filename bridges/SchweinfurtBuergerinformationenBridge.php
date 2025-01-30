@@ -43,18 +43,13 @@ class SchweinfurtBuergerinformationenBridge extends BridgeAbstract
 
         foreach ($articleIDs as $articleID) {
             $this->items[] = $this->generateItemFromArticle($articleID);
-
-            if (Debug::isEnabled()) {
-                break;
-            }
         }
     }
 
     private function getArticleIDsFromPage($page)
     {
         $url = sprintf(self::URI . '?art_pager=%d', $page);
-        $html = getSimpleHTMLDOMCached($url, self::INDEX_CACHE_TIMEOUT)
-            or returnServerError('Could not retrieve ' . $url);
+        $html = getSimpleHTMLDOMCached($url, self::INDEX_CACHE_TIMEOUT);
 
         $articles = $html->find('div.artikel-uebersicht');
         $articleIDs = [];
@@ -74,8 +69,7 @@ class SchweinfurtBuergerinformationenBridge extends BridgeAbstract
     private function generateItemFromArticle($id)
     {
         $url = sprintf(self::ARTICLE_URI, $id);
-        $html = getSimpleHTMLDOMCached($url, self::ARTICLE_CACHE_TIMEOUT)
-            or returnServerError('Could not retrieve ' . $url);
+        $html = getSimpleHTMLDOMCached($url, self::ARTICLE_CACHE_TIMEOUT);
 
         $div = $html->find('div#artikel-detail', 0);
         $divContent = $div->find('.c-content', 0);
@@ -111,9 +105,9 @@ class SchweinfurtBuergerinformationenBridge extends BridgeAbstract
             ];
 
         // Let's see if there are images in the content, and if yes, attach
-        // them as enclosures, but not images which are used for linking to an external site.
+        // them as enclosures, but not images which are used for linking to an external site and data URIs.
         foreach ($images as $image) {
-            if ($image->class != 'imgextlink') {
+            if ($image->class != 'imgextlink' && parse_url($image->src, PHP_URL_SCHEME) != 'data') {
                 $item['enclosures'][] = $image->src;
             }
         }
